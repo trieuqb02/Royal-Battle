@@ -36,5 +36,5 @@ export abstract class ECSSystem {
         this.scene = scene;
     }
 
-    public abstract onProcess(entities: readonly ECSEntity[], dt?: number): void;
+    public abstract onProcess(entities: readonly ECSEntity[], dt: number): void;
 }

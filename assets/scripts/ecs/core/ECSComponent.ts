@@ -13,5 +13,5 @@ export function ecsComponent(type: ComponentType): Function {
 }
 
 export abstract class ECSComponent {
-    
+    isDirty: boolean = true;
 }

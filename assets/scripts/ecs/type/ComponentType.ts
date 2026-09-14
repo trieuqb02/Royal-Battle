@@ -1,4 +1,5 @@
 export enum ComponentType {
-    TEST,
-    TEST2
+    NODE_CONFIG,
+    NODE_REF,
+    PREFAB,
 }

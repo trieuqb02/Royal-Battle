@@ -1,6 +1,6 @@
-import { ComponentType } from "../../scripts/ecs/type/ComponentType";
 import { ECS_COMPONENT_TYPE } from "./ECSComponent";
 import { ComponentConstructor } from "./ECSScene";
+import { ComponentType } from "./ECSType";
 
 export class ECSQuery {
     private _all: Set<ComponentType>;

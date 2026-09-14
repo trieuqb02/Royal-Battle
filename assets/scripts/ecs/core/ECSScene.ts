@@ -8,20 +8,20 @@ import { ECSQuery } from "./ECSQuery";
 export type ComponentConstructor<T extends ECSComponent = ECSComponent> = new (...args: any[]) => T;
 
 interface IECSScene {
-    createEntity(): EntityIndex;
+    createEntity(): ECSEntity;
     removeEntity(id: EntityIndex): boolean;
 
-    hasComponentById(id: EntityIndex, comp: ComponentConstructor | ComponentType): boolean;
-    hasComponentByEntity(entity: ECSEntity, comp: ComponentConstructor | ComponentType): boolean;
+    hasComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor<T> | T): boolean;
+    hasComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor<T> | T): boolean;
 
-    addComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor | T): T;
-    addComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor | T): T;
+    addComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor<T> | T): T;
+    addComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor<T> | T): T;
 
-    getComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor | ComponentType): T;
-    getComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor | ComponentType): T;
+    getComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor<T> | T): T;
+    getComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor<T> | T): T;
 
-    removeComponentById(id: EntityIndex, comp: ComponentConstructor | ComponentType): boolean;
-    removeComponentByEntity(entity: ECSEntity, comp: ComponentConstructor | ComponentType): boolean;
+    removeComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor<T> | T): boolean;
+    removeComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor<T> | T): boolean;
 
     getAllSystem(): ECSSystem[];
     getSystemByType(type: SystemType): ECSSystem | undefined;
@@ -47,8 +47,6 @@ export class ECSScene implements IECSScene {
         }
     }
 
-    private _logTimer = 0;
-
     public onUpdate(dt: number): void {
         for (const system of this.systems) {
             system.onUpdate(dt);
@@ -61,11 +59,11 @@ export class ECSScene implements IECSScene {
         }
     }
 
-    public createEntity(name?: string): EntityIndex {
+    public createEntity(name?: string): ECSEntity {
         const entity = new ECSEntity(this.id++, name);
         entity.setScene(this);
         this.entities.push(entity);
-        return entity.getId();
+        return entity;
     }
 
     public removeEntity(id: EntityIndex): boolean {
@@ -85,8 +83,9 @@ export class ECSScene implements IECSScene {
         return result;
     }
 
-    public hasComponentById(id: EntityIndex, comp: ComponentConstructor | ComponentType): boolean {
-        const compType = comp.constructor?.[ECS_COMPONENT_TYPE] ?? comp;
+    public hasComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor<T> | T): boolean {
+        comp = this.convertToComponent<T>(comp);
+        const compType = this.getComponentType(comp);
         const pool = this.componentPools.find((p) => p.getPoolType() === compType);
         if (pool) {
             return pool.has(id);
@@ -94,23 +93,25 @@ export class ECSScene implements IECSScene {
         return false;
     }
 
-    public hasComponentByEntity(entity: ECSEntity, comp: ComponentConstructor | ComponentType): boolean {
+    public hasComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor | T): boolean {
         return this.hasComponentById(entity.getId(), comp);
     }
 
-    public addComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor | T): T {
-        const compType = comp.constructor?.[ECS_COMPONENT_TYPE] ?? comp[ECS_COMPONENT_TYPE];
+    public addComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor<T> | T): T {
+        comp = this.convertToComponent<T>(comp);
+        const compType = this.getComponentType<T>(comp);
         let pool = this.componentPools.find((pool: ECSComponentPool<T>) => pool.getPoolType() === compType);
         pool.setMaxEntityIndex(id + 1);
-        return pool.add(id, comp) as T;
+        return pool.add(id, comp as T) as T;
     }
 
-    public addComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor | T): T {
+    public addComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor<T> | T): T {
         return this.addComponentById(entity.getId(), comp);
     }
 
-    public getComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor | ComponentType): T {
-        const compType = comp[ECS_COMPONENT_TYPE] ?? comp;
+    public getComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor<T> | T): T {
+        comp = this.convertToComponent<T>(comp);
+        const compType = this.getComponentType<T>(comp);
         const pool = this.componentPools.find((p) => p.getPoolType() === compType);
         if (pool) {
             return pool.get(id) as T;
@@ -118,12 +119,13 @@ export class ECSScene implements IECSScene {
         return undefined;
     }
 
-    public getComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor | ComponentType): T {
+    public getComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor<T> | T): T {
         return this.getComponentById(entity.getId(), comp);
     }
 
-    public removeComponentById(id: EntityIndex, comp: ComponentConstructor | ComponentType): boolean {
-        const compType = comp.constructor[ECS_COMPONENT_TYPE] ?? comp;
+    public removeComponentById<T extends ECSComponent>(id: EntityIndex, comp: ComponentConstructor<T> | T): boolean {
+        comp = this.convertToComponent<T>(comp);
+        const compType = this.getComponentType(comp);
         const pool = this.componentPools.find((p) => p.getPoolType() === compType);
         if (pool) {
             return pool.remove(id);
@@ -131,9 +133,8 @@ export class ECSScene implements IECSScene {
         return false;
     }
 
-    public removeComponentByEntity(entity: ECSEntity, comp: ComponentConstructor | ComponentType): boolean {
-        const compType = comp.constructor[ECS_COMPONENT_TYPE] ?? comp;
-        return this.removeComponentById(entity.getId(), compType);
+    public removeComponentByEntity<T extends ECSComponent>(entity: ECSEntity, comp: ComponentConstructor<T> | T): boolean {
+        return this.removeComponentById(entity.getId(), comp);
     }
 
     public addSystem<T extends ECSSystem>(system: T): void {
@@ -145,15 +146,26 @@ export class ECSScene implements IECSScene {
         return this.systems;
     }
 
-    public getSystemByType(type: SystemType): ECSSystem | undefined {
-        const system = this.systems.find((sys: ECSSystem) => type === sys[ECS_SYSTEM_TYPE]);
-        return system;
+    public getSystemByType<T extends ECSSystem>(type: SystemType): T | undefined {
+        const system = this.systems.find((sys: ECSSystem) => type === sys.constructor[ECS_SYSTEM_TYPE]);
+        return system as T;
     }
 
     public removeSystem<T extends ECSSystem>(system: T): boolean {
         const length = this.systems.length;
         this.systems = this.systems.filter((sys: ECSSystem) => sys !== system);
         return length === this.systems.length;
+    }
+
+    private getComponentType<T extends ECSComponent>(comp: T): ComponentType {
+        return comp.constructor[ECS_COMPONENT_TYPE];
+    }
+
+    private convertToComponent<T extends ECSComponent>(comp: ComponentConstructor<T> | T): T {
+        if (typeof comp === "function") {
+            comp = new comp();
+        }
+        return comp;
     }
 
     public getEntitiesWithQuery(query: ECSQuery): readonly ECSEntity[] {

@@ -1,16 +1,15 @@
 import { ECSComponent } from "./ECSComponent";
 import { ComponentConstructor, ECSScene } from "./ECSScene";
-import { ComponentType } from "./ECSType";
 
 export type EntityIndex = number;
 
 interface IECSEntity {
     getId(): EntityIndex;
 
-    hasComponent(comp: ComponentConstructor | ComponentType): boolean;
-    getComponent<T extends ECSComponent>(comp: ComponentConstructor | ComponentType): T;
-    addComponent<T extends ECSComponent>(comp: ComponentConstructor | T): T;
-    removeComponent(comp: ComponentConstructor | ComponentType): boolean;
+    hasComponent<T extends ECSComponent>(comp: ComponentConstructor<T> | T): boolean;
+    getComponent<T extends ECSComponent>(comp: ComponentConstructor<T> | T): T;
+    addComponent<T extends ECSComponent>(comp: ComponentConstructor<T> | T): T;
+    removeComponent<T extends ECSComponent>(comp: ComponentConstructor<T> | T): boolean;
 }
 
 export class ECSEntity implements IECSEntity {
@@ -27,28 +26,28 @@ export class ECSEntity implements IECSEntity {
         this.scene = scene;
     }
 
-    hasComponent(comp: ComponentConstructor | ComponentType): boolean {
+    hasComponent<T extends ECSComponent>(comp: ComponentConstructor<T> | T): boolean {
         if (!this.scene) {
             throw new Error("Entity is not associated with a scene.");
         }
         return this.scene.hasComponentByEntity(this, comp);
     }
 
-    getComponent<T extends ECSComponent>(comp: ComponentConstructor | ComponentType): T {
+    getComponent<T extends ECSComponent>(comp: ComponentConstructor<T> | T): T {
         if (!this.scene) {
             throw new Error("Entity is not associated with a scene.");
         }
         return this.scene.getComponentById(this.id, comp);
     }
 
-    addComponent<T extends ECSComponent>(comp: ComponentConstructor | T): T {
+    addComponent<T extends ECSComponent>(comp: ComponentConstructor<T> | T): T {
         if (!this.scene) {
             throw new Error("Entity is not associated with a scene.");
         }
         return this.scene.addComponentById(this.id, comp);
     }
 
-    removeComponent(comp: ComponentConstructor | ComponentType): boolean {
+    removeComponent<T extends ECSComponent>(comp: ComponentConstructor<T> | T): boolean {
         if (!this.scene) {
             throw new Error("Entity is not associated with a scene.");
         }
