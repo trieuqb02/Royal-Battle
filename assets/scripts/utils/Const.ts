@@ -15,3 +15,7 @@ export enum PoolHandlerName {
     CELL = "CellManager",
     HERO = "HeroManager"
 }
+
+export enum EventType {
+
+}

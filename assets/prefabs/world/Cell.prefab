@@ -163,10 +163,7 @@
       "b": 255,
       "a": 255
     },
-    "_spriteFrame": {
-      "__uuid__": "7d8f9b89-4fd1-4c9f-a3ab-38ec7cded7ca@f9941",
-      "__expectedType__": "cc.SpriteFrame"
-    },
+    "_spriteFrame": null,
     "_type": 0,
     "_fillType": 0,
     "_sizeMode": 0,
@@ -263,7 +260,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 42.255859375,
+      "width": 0,
       "height": 50.4
     },
     "_anchorPoint": {
@@ -299,7 +296,7 @@
       "b": 255,
       "a": 255
     },
-    "_string": "label",
+    "_string": "",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 20,

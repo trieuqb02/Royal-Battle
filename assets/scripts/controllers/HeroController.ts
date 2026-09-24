@@ -1,14 +1,10 @@
-import { _decorator, Component, Node } from 'cc';
+import { _decorator, Node } from 'cc';
+import { ECSNode } from '../ecs/core/ECSNode';
 const { ccclass, property } = _decorator;
 
 @ccclass('HeroManager')
-export class HeroManager extends Component {
-    start() {
+export class HeroManager extends ECSNode {
 
-    }
-
-    update(deltaTime: number) {
-        
-    }
 }
-
+
+
